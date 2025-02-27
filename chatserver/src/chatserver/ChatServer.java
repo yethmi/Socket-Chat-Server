@@ -1,5 +1,8 @@
 package chatserver;
 
+/*
+*in begining we use Hash Set because we only check whether it's unique, but then we use HashMap to map key - value
+**/
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -110,13 +113,15 @@ public class ChatServer {
                     if (name == null) {
                         return;
                     }
-                    
+
                     // TODO: Add code to ensure the thread safety of the
                     // the shared variable 'names'
-                    if (!names.contains(name)) {
+                    synchronized(names) {
+                        if (!names.contains(name)) {
                             names.add(name);
                             break;
                         }
+                    }
                     
                  }
 
