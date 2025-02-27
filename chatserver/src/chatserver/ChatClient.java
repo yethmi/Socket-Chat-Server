@@ -67,7 +67,7 @@ public class ChatClient {
              * the text area in preparation for the next message.
              */
             public void actionPerformed(ActionEvent e) {
-                out.println(textField.getText());
+                out.println("DIRECT" + textField.getText());
                 textField.setText("");
             }
         });
@@ -103,8 +103,8 @@ public class ChatClient {
     private void run() throws IOException {
 
         // Make connection and initialize streams
-        String serverAddress = getServerAddress();
-        Socket socket = new Socket(serverAddress, 9001);
+        //String serverAddress = getServerAddress();
+        Socket socket = new Socket("localhost", 9001);
         in = new BufferedReader(new InputStreamReader(
             socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);

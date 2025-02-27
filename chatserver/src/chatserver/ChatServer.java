@@ -10,7 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashSet;
+import java.util.HashMap;
 
 /**
  * A multithreaded chat room server.  When a client connects the
@@ -39,17 +39,10 @@ public class ChatServer {
     private static final int PORT = 9001;
 
     /**
-     * The set of all names of clients in the chat room.  Maintained
-     * so that we can check that new clients are not registering name
-     * already in use.
+     * The HashMap for map,
+     * client name as the "key" and print writer as the "value"
      */
-    private static HashSet<String> names = new HashSet<String>();
-
-    /**
-     * The set of all the print writers for all the clients.  This
-     * set is kept so we can easily broadcast messages.
-     */
-    private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
+    private static HashMap<String,PrintWriter> clients = new HashMap<>();
 
     /**
      * The appplication main method, which just listens on a port and
@@ -114,11 +107,9 @@ public class ChatServer {
                         return;
                     }
 
-                    // TODO: Add code to ensure the thread safety of the
-                    // the shared variable 'names'
-                    synchronized(names) {
-                        if (!names.contains(name)) {
-                            names.add(name);
+                    synchronized(clients) {
+                        if (!clients.containsKey(name)) {
+                            clients.put(name , out);
                             break;
                         }
                     }
@@ -129,7 +120,7 @@ public class ChatServer {
                 // socket's print writer to the set of all writers so
                 // this client can receive broadcast messages.
                 out.println("NAMEACCEPTED");
-                writers.add(out);
+                //clients.values().add(out);
                 
                 // TODO: You may have to add some code here to broadcast all clients the new
                 // client's name for the task 9 on the lab sheet. 
@@ -142,13 +133,27 @@ public class ChatServer {
                     if (input == null) {
                         return;
                     }
+
+                    if(input.startsWith("DIRECT")) {
+
+                        //Remove "DIRECT"
+                        input = input.substring("DIRECT".length());
+                        PrintWriter receiver = clients.get(input.substring( 0 , input.indexOf(":")));
+                        String message = input.substring(input.indexOf(":") + 1 );
+                        receiver.println("MESSAGE " + name + ": " + message);
+
+                        out.println("MESSAGE " + name + ": " + message);
+
+                    }else{
+                        for (PrintWriter writer : clients.values()) {
+                            writer.println("MESSAGE " + name + ": " + input);
+                        }
+                    }
                     
                     // TODO: Add code to send a message to a specific client and not
                     // all clients. You may have to use a HashMap to store the sockets along 
                     // with the chat client names
-                    for (PrintWriter writer : writers) {
-                        writer.println("MESSAGE " + name + ": " + input);
-                    }
+
                 }
             }// TODO: Handle the SocketException here to handle a client closing the socket
             catch (IOException e) {
@@ -157,10 +162,10 @@ public class ChatServer {
                 // This client is going down!  Remove its name and its print
                 // writer from the sets, and close its socket.
                 if (name != null) {
-                    names.remove(name);
+                    clients.remove(name);
                 }
                 if (out != null) {
-                    writers.remove(out);
+                    clients.remove(out);
                 }
                 try {
                     socket.close();
