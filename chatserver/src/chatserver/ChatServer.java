@@ -16,10 +16,7 @@ public class ChatServer {
 
     private static final int PORT = 9001;
 
-    /**
-     * The HashMap for map,
-     * client name as the "key" and print writer as the "value"
-     */
+    // Request a name from this clientThe HashMap for map, client name as the "key" and print writer as the "value"
     private static HashMap<String,PrintWriter> clients = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
@@ -51,19 +48,23 @@ public class ChatServer {
             try {
 
                 // Create character streams for the socket.
-                in = new BufferedReader(new InputStreamReader(
-                    socket.getInputStream()));
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
 
                 while (true) {
+
+                    // Request a name from this client
                     out.println("SUBMITNAME");
                     name = in.readLine();
                     if (name == null) {
                         return;
                     }
 
+                    // Synchronize shared variable 'clients'
                     synchronized(clients) {
-                        if (!clients.containsKey(name)) {
+
+                        // Check name is already exist or is it empty.
+                        if (!clients.containsKey(name) && !name.isEmpty()) {
                             clients.put(name , out);
                             break;
                         }
@@ -71,8 +72,10 @@ public class ChatServer {
                     
                  }
 
+                // Send to client that name is accepted
                 out.println("NAMEACCEPTED" + name);
 
+                // Broadcast existing client list
                 String clientList = String.join( "," , clients.keySet());
                 for (PrintWriter writer : clients.values()) {
                     writer.println("MESSAGE" + name + " Joined the chat..");
@@ -88,11 +91,14 @@ public class ChatServer {
 
                     if(input.startsWith("DIRECT")) {
 
-                        //Remove "DIRECT"
+                        // Remove "DIRECT" string
+                        // Get Selected client list that need to send the message
+                        // Extract the message from the string
                         input = input.substring("DIRECT".length());
                         String[] stringClientList = (input.substring( 0 , input.indexOf(":"))).split(",");
                         String message = input.substring(input.indexOf(":") + 1 );
 
+                        //Send Messageto the selected clients
                         for (String client : stringClientList) {
 
                             if(clients.containsKey(client)) {
@@ -101,10 +107,13 @@ public class ChatServer {
                             }
 
                         }
+
+                        // Send message to sender
                         out.println("MESSAGE" + name + ": " + message);
 
                     }else if(input.startsWith("BROADCAST")) {
 
+                        // Broadcast to all clients
                         input = input.substring("BROADCAST".length());
                         for (PrintWriter writer : clients.values()) {
                             writer.println("MESSAGE" + name + ": " + input);
@@ -114,7 +123,7 @@ public class ChatServer {
                 }
             }// TODO: Handle the SocketException here to handle a client closing the socket
             catch (IOException e) {
-                System.out.println(e);
+                System.out.println("Error handling client : " + name + ": " + e);
             } finally {
 
                 if (name != null) {

@@ -121,8 +121,12 @@ public class ChatClient {
 
             if (line.startsWith("SUBMITNAME")) {
 
-                out.println(getName());
-                //frame.setTitle(getName());
+                if (getName() == null || getName().equals("null")) {
+                    frame.dispose();
+                }else{
+                    out.println(getName());
+
+                }
 
             } else if (line.startsWith("NAMEACCEPTED")) {
 
