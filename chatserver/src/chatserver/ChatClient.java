@@ -31,19 +31,20 @@ public class ChatClient {
         frame.getContentPane().add(textField, "North");
         frame.getContentPane().add(new JScrollPane(messageArea), "West");
 
-        //client list box
+        // client list box , Can Select multiple clients
         clientListModel = new DefaultListModel<>();
         clientList = new JList<>(clientListModel);
         clientList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         frame.getContentPane().add(new JScrollPane(clientList), "East");
 
-        //Broadcast Check Box
+        // Broadcast Check Box
         broadcastCheckBox = new JCheckBox("Broadcast");
         broadcastCheckBox.setSelected(false);
         frame.getContentPane().add(broadcastCheckBox, "South");
 
         frame.pack();
 
+        // Hide client list , if broadcast check box checked
         broadcastCheckBox.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -81,9 +82,6 @@ public class ChatClient {
         
     }
 
-    /**
-     * Prompt for and return the address of the server.
-     */
     private String getServerAddress() {
         return JOptionPane.showInputDialog(
             frame,
@@ -92,9 +90,6 @@ public class ChatClient {
             JOptionPane.QUESTION_MESSAGE);
     }
 
-    /**
-     * Prompt for and return the desired screen name.
-     */
     private String getName() {
         return JOptionPane.showInputDialog(
             frame,
@@ -103,16 +98,12 @@ public class ChatClient {
             JOptionPane.PLAIN_MESSAGE);
     }
 
-    /**
-     * Connects to the server then enters the processing loop.
-     */
     private void run() throws IOException {
 
         // Make connection and initialize streams
-        //String serverAddress = getServerAddress();
-        Socket socket = new Socket("localhost", 9001);
-        in = new BufferedReader(new InputStreamReader(
-            socket.getInputStream()));
+        String serverAddress = getServerAddress();
+        Socket socket = new Socket(serverAddress, 9001);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
         while (true) {
@@ -121,15 +112,17 @@ public class ChatClient {
 
             if (line.startsWith("SUBMITNAME")) {
 
-                if (getName() == null || getName().equals("null")) {
+                String name = getName();
+
+                if (name == null || name.equals("null")) {
                     frame.dispose();
                 }else{
-                    out.println(getName());
-
+                    out.println(name);
                 }
 
             } else if (line.startsWith("NAMEACCEPTED")) {
 
+                // Enable to type a message in text feild , Set frame name to the client name
                 textField.setEditable(true);
                 frame.setTitle(line.substring("NAMEACCEPTED".length()));
 
@@ -139,6 +132,7 @@ public class ChatClient {
 
             }else if (line.startsWith("CLIENT_LIST")) {
 
+                // Get client list and show in list
                 String[] clientList = line.substring("CLIENT_LIST".length()).split(",");
                 clientListModel.clear();
                 for (String client : clientList) {

@@ -1,9 +1,5 @@
 package chatserver;
 
-/*
-*in begining we use Hash Set because we only check whether it's unique, but then we use HashMap to map key - value
-**/
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -61,16 +57,15 @@ public class ChatServer {
                     }
 
                     // Synchronize shared variable 'clients'
+                    // Check name is already exist or is it empty.
                     synchronized(clients) {
-
-                        // Check name is already exist or is it empty.
                         if (!clients.containsKey(name) && !name.isEmpty()) {
                             clients.put(name , out);
                             break;
                         }
                     }
-                    
-                 }
+
+                }
 
                 // Send to client that name is accepted
                 out.println("NAMEACCEPTED" + name);
@@ -121,7 +116,7 @@ public class ChatServer {
                     }
 
                 }
-            }// TODO: Handle the SocketException here to handle a client closing the socket
+            }
             catch (IOException e) {
                 System.out.println("Error handling client : " + name + ": " + e);
             } finally {
