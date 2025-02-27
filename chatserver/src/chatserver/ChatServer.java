@@ -71,7 +71,7 @@ public class ChatServer {
                     
                  }
 
-                out.println("NAMEACCEPTED");
+                out.println("NAMEACCEPTED" + name);
 
                 String clientList = String.join( "," , clients.keySet());
                 for (PrintWriter writer : clients.values()) {

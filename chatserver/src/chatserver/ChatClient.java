@@ -122,10 +122,12 @@ public class ChatClient {
             if (line.startsWith("SUBMITNAME")) {
 
                 out.println(getName());
+                //frame.setTitle(getName());
 
             } else if (line.startsWith("NAMEACCEPTED")) {
 
                 textField.setEditable(true);
+                frame.setTitle(line.substring("NAMEACCEPTED".length()));
 
             } else if (line.startsWith("MESSAGE")) {
 
