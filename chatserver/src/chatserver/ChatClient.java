@@ -9,28 +9,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.*;
 
-/**
- * A simple Swing-based client for the chat server.  Graphically
- * it is a frame with a text field for entering messages and a
- * textarea to see the whole dialog.
- *
- * The client follows the Chat Protocol which is as follows.
- * When the server sends "SUBMITNAME" the client replies with the
- * desired screen name.  The server will keep sending "SUBMITNAME"
- * requests as long as the client submits screen names that are
- * already in use.  When the server sends a line beginning
- * with "NAMEACCEPTED" the client is now allowed to start
- * sending the server arbitrary strings to be broadcast to all
- * chatters connected to the server.  When the server sends a
- * line beginning with "MESSAGE " then all characters following
- * this string should be displayed in its message area.
- */
 public class ChatClient {
 
     BufferedReader in;
@@ -38,38 +18,64 @@ public class ChatClient {
     JFrame frame = new JFrame("Chatter");
     JTextField textField = new JTextField(40);
     JTextArea messageArea = new JTextArea(8, 40);
-    // TODO: Add a list box
 
-    /**
-     * Constructs the client by laying out the GUI and registering a
-     * listener with the textfield so that pressing Return in the
-     * listener sends the textfield contents to the server.  Note
-     * however that the textfield is initially NOT editable, and
-     * only becomes editable AFTER the client receives the NAMEACCEPTED
-     * message from the server.
-     */
+    DefaultListModel<String> clientListModel;
+    JList<String> clientList;
+    JCheckBox broadcastCheckBox;
+
     public ChatClient() {
 
         // Layout GUI
         textField.setEditable(false);
         messageArea.setEditable(false);
         frame.getContentPane().add(textField, "North");
-        frame.getContentPane().add(new JScrollPane(messageArea), "Center");
+        frame.getContentPane().add(new JScrollPane(messageArea), "West");
+
+        //client list box
+        clientListModel = new DefaultListModel<>();
+        clientList = new JList<>(clientListModel);
+        clientList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        frame.getContentPane().add(new JScrollPane(clientList), "East");
+
+        //Broadcast Check Box
+        broadcastCheckBox = new JCheckBox("Broadcast");
+        broadcastCheckBox.setSelected(false);
+        frame.getContentPane().add(broadcastCheckBox, "South");
+
         frame.pack();
 
-        // TODO: You may have to edit this event handler to handle point to point messaging,
-        // where one client can send a message to a specific client. You can add some header to 
-        // the message to identify the recipient. You can get the receipient name from the listbox.
-        textField.addActionListener(new ActionListener() {
-            /**
-             * Responds to pressing the enter key in the textfield by sending
-             * the contents of the text field to the server.    Then clear
-             * the text area in preparation for the next message.
-             */
+        broadcastCheckBox.addActionListener(new ActionListener() {
+
             public void actionPerformed(ActionEvent e) {
-                out.println("DIRECT" + textField.getText());
-                textField.setText("");
+
+                if (!broadcastCheckBox.isSelected()) {
+                    clientList.setVisible(true);
+
+                }else if(broadcastCheckBox.isSelected()){
+                    clientList.setVisible(false);
+                }
+
             }
+
+        });
+
+        textField.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                if (!broadcastCheckBox.isSelected()) {
+
+                    String stringClientList = String.join(",", clientList.getSelectedValuesList());
+                    out.println("DIRECT" + stringClientList + ":" + textField.getText());
+                    textField.setText("");
+
+                }else if(broadcastCheckBox.isSelected()){
+                    out.println("BROADCAST" + textField.getText());
+                    textField.setText("");
+                }
+
+            }
+
         });
         
         
@@ -109,24 +115,35 @@ public class ChatClient {
             socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
-        // Process all messages from server, according to the protocol.
-        
-        // TODO: You may have to extend this protocol to achieve task 9 in the lab sheet
         while (true) {
+
             String line = in.readLine();
+
             if (line.startsWith("SUBMITNAME")) {
+
                 out.println(getName());
+
             } else if (line.startsWith("NAMEACCEPTED")) {
+
                 textField.setEditable(true);
+
             } else if (line.startsWith("MESSAGE")) {
-                messageArea.append(line.substring(8) + "\n");
+
+                messageArea.append(line.substring("MESSAGE".length()) + "\n");
+
+            }else if (line.startsWith("CLIENT_LIST")) {
+
+                String[] clientList = line.substring("CLIENT_LIST".length()).split(",");
+                clientListModel.clear();
+                for (String client : clientList) {
+                    clientListModel.addElement(client);
+                }
+
             }
         }
     }
 
-    /**
-     * Runs the client as an application with a closeable frame.
-     */
+
     public static void main(String[] args) throws Exception {
         ChatClient client = new ChatClient();
         client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
